@@ -9,22 +9,6 @@ import pandas as pd
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 
-# ANGLES_SEVEN_SEAT_STANDARD = [(2, 14),
-#                               (2, 14),
-#                               (6, 13),
-#                               (6, 13),
-#                               (16, 27),
-#                               (17, 26),
-#                               (17, 26)]
-#
-# RANGES_SEVEN_SEAT_STANDARD = [(2, 10),
-#                               (18, 26),
-#                               (2, 9),
-#                               (19, 26),
-#                               (13, 15),
-#                               (6, 13),
-#                               (15, 24)]
-
 # matplotlib.use('TkAgg')
 
 
@@ -134,10 +118,7 @@ def heatmap_visualization(path, fname):
             if point[0] == slice_show[2]:
                 slice_3[int(point[1]), int(point[2])] = point[3]
 
-        # front = front[4:, :]
-        # left = left[4:, :]
         draw(slice_1, slice_2, slice_3, slice_show)
-
         plt.clf()
 
 
@@ -146,7 +127,6 @@ def heatmap_restore(addr, path, fname):
     heatmap = np.loadtxt(path + '\\' + fname + ".txt", delimiter=',')
     print("Reading Complete.")
 
-    # output_addr = os.path.join(r"dataset")
     output_addr = addr
     if not os.path.exists(output_addr):
         os.mkdir(output_addr)
@@ -156,24 +136,14 @@ def heatmap_restore(addr, path, fname):
         os.makedirs(output_addr)
 
     frame_num = int(heatmap[:, 0].max())
-    # index = int(heatmap[:, 1].max())
-    # azimuth = int(heatmap[:, 2].max()) + 1
-    # elevation = int(heatmap[:, 3].max()) + 1
-
     for i in range(frame_num):
         data = heatmap[heatmap[:, 0] == i + 1, 1:]
         file_name = fname + "_%d.bin" % (i + 1)
 
-        # restore = []
         tmp = np.zeros((27, 28, 28))
-        # for j in range(4, index):
-        #     data_index = data[data[:, 0] == j, 1:]
-        #     tmp = np.zeros((azimuth, elevation))
         for point in data:
             tmp[int(point[0]) - 4, int(point[1]), int(point[2])] = point[3]
-            # restore.append(tmp)
 
-        # np.savetxt(os.path.join(output_addr, file_name), restore)
         tmp.tofile(os.path.join(output_addr, file_name))
 
 
@@ -183,7 +153,6 @@ def get_label(path):
     labels = []
 
     # 拿到图像数据路径，方便后续读取
-    # imagePaths = sorted(list(list_images('./dataset')))
     imagePaths = sorted(list(list_images(path)))
     random.seed(42)
     random.shuffle(imagePaths)
@@ -193,21 +162,19 @@ def get_label(path):
         # 读取图像数据
         image = np.fromfile(imagePath)
         image = np.reshape(image, (27, 28, 28))
-        # image = image / image.max()
         image = normalization(image)
-        # image = np.expand_dims(image, axis=0)
         data.append(image)
         # 读取标签
-        label = imagePath.split(os.path.sep)[-2]  # 文件路径的倒数第二个就是文件夹的名字被定义为标签
-        labels.append(int(label))
+        label = int(imagePath.split(os.path.sep)[-2])  # 文件路径的倒数第二个就是文件夹的名字被定义为标签
+        # labels.append(label)
+        label_vector = np.zeros((1, 4))
+        label_vector[0, label - 1] = 1
+        labels.append(label_vector)
 
     data = np.array(data)
     labels = np.array(labels)
-    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.05, random_state=42)
+    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
 
-    # lb = LabelBinarizer()
-    # y_train = lb.fit_transform(y_train)
-    # y_test = lb.transform(y_test)
     x_train = torch.from_numpy(x_train).to(torch.float32)
     x_test = torch.from_numpy(x_test).to(torch.float32)
     y_train = torch.from_numpy(y_train).to(torch.float32)

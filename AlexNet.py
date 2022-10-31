@@ -4,26 +4,26 @@ from d2l import torch as d2l
 
 net = nn.Sequential(
     # first convolution layer
-    nn.Conv2d(27, 16, kernel_size=5, stride=1, padding=0), nn.ReLU(),
-    nn.MaxPool2d(kernel_size=2, stride=1),
+    nn.Conv2d(27, 108, kernel_size=3, stride=1, padding=0), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3, stride=1),
 
     # second convolution layer
-    nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=0), nn.ReLU(),
-    nn.MaxPool2d(kernel_size=2, stride=1),
+    nn.Conv2d(108, 216, kernel_size=3, stride=1, padding=0), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
 
     # third, forth and fifth convolution layer
-    # nn.Conv2d(256, 384, kernel_size=3, padding=1), nn.ReLU(),
-    # nn.Conv2d(384, 384, kernel_size=3, padding=1), nn.ReLU(),
-    # nn.Conv2d(384, 256, kernel_size=3, padding=1), nn.ReLU(),
-    # nn.MaxPool2d(kernel_size=3, stride=2),
+    nn.Conv2d(216, 256, kernel_size=3, stride=1), nn.ReLU(),
+    nn.Conv2d(256, 256, kernel_size=3, stride=1), nn.ReLU(),
+    nn.Conv2d(256, 64, kernel_size=3, stride=1), nn.ReLU(),
+    nn.MaxPool2d(kernel_size=2, stride=1),
     nn.Flatten(),
 
     # three full connecting layer, the last is output
-    nn.Linear(3200, 512), nn.ReLU(),
+    nn.Linear(1024, 512), nn.ReLU(),
     nn.Dropout(p=0.5),
     nn.Linear(512, 64), nn.ReLU(),
     nn.Dropout(p=0.5),
-    nn.Linear(64, 1)
+    nn.Linear(64, 4)
 )
 
 # output dimension
