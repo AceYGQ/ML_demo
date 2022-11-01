@@ -28,7 +28,7 @@ if __name__ == '__main__':
     eigenvalues, eigenvectors = eig(data_cov)
 
     tot = sum(eigenvalues)
-    var_exp = [(i/tot) for i in sorted(eigenvalues, reverse=True)]
+    var_exp = [(i / tot) for i in sorted(eigenvalues, reverse=True)]
     cum_var_exp = np.cumsum(var_exp)
 
     plt.bar(range(1, 5), var_exp, alpha=0.5, align='center', label='individual var')
