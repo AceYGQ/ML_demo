@@ -175,9 +175,9 @@ def get_label(path):
     labels = np.array(labels)
     (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
 
-    x_train = torch.from_numpy(x_train).to(torch.float32)
-    x_test = torch.from_numpy(x_test).to(torch.float32)
-    y_train = torch.from_numpy(y_train).to(torch.float32)
+    # x_train = torch.from_numpy(x_train).to(torch.float32)
+    # x_test = torch.from_numpy(x_test).to(torch.float32)
+    # y_train = torch.from_numpy(y_train).to(torch.float32)
     # y_test = torch.from_numpy(y_test).to(torch.float32)
 
     return x_train, y_train, x_test, y_test

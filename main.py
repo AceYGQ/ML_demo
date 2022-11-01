@@ -23,13 +23,16 @@ if __name__ == "__main__":
     # HeatMap.heatmap_restore(dataset_path, origin_path, fname)
     # HeatMap.heatmap_restore(testset_path, origin_path, fname)
 
+    print("Check Device...")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+
     train = True
     if train:
-        print("Check Device...")
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        print(device)
-
         x_train, y_train, x_test, y_test = HeatMap.get_label(dataset_path)
+        x_train = torch.from_numpy(x_train).to(torch.float32)
+        x_test = torch.from_numpy(x_test).to(torch.float32)
+        y_train = torch.from_numpy(y_train).to(torch.float32)
         x_train, x_test = x_train.to(device), x_test.to(device)
 
         # train
@@ -42,7 +45,6 @@ if __name__ == "__main__":
         acc_num = 0
         total_num = 0
         for i, data in enumerate(x_test, 0):
-            data = data.to(torch.float32)
             prediction = net(data).cpu()
             prediction = prediction.detach().numpy()
             if np.argmax(prediction) == np.argmax(y_test[i]):
@@ -51,28 +53,29 @@ if __name__ == "__main__":
         print("Accuracy on Test-Set-1 : %.2f\n" % (acc_num / total_num))
 
         # test 2
-        # x_train, y_train, x_test, y_test = HeatMap.get_label(testset_path)
-        # x_train, x_test = x_train.to(device), x_test.to(device)
-        # y_train = y_train.numpy()
-        #
-        # acc_num = 0
-        # total_num = 0
-        # for i, data in enumerate(x_train, 0):
-        #     data = data.to(torch.float32)
-        #     prediction = net(data).cpu()
-        #     prediction = prediction.detach().numpy()
-        #     if np.argmax(prediction) == np.argmax(y_train[i]):
-        #         acc_num += 1
-        #     total_num += 1
-        #
-        # for i, data in enumerate(x_test, 0):
-        #     data = data.to(torch.float32)
-        #     prediction = net(data).cpu()
-        #     prediction = prediction.detach().numpy()
-        #     if np.argmax(prediction) == np.argmax(y_test[i]):
-        #         acc_num += 1
-        #     total_num += 1
-        # print("Accuracy on Test-Set-2 : %.2f\n" % (acc_num / total_num))
+        test_2 = False
+        if test_2:
+            x_train, y_train, x_test, y_test = HeatMap.get_label(testset_path)
+            x_train = torch.from_numpy(x_train).to(torch.float32)
+            x_test = torch.from_numpy(x_test).to(torch.float32)
+            x_train, x_test = x_train.to(device), x_test.to(device)
+
+            acc_num = 0
+            total_num = 0
+            for i, data in enumerate(x_train, 0):
+                prediction = net(data).cpu()
+                prediction = prediction.detach().numpy()
+                if np.argmax(prediction) == np.argmax(y_train[i]):
+                    acc_num += 1
+                total_num += 1
+
+            for i, data in enumerate(x_test, 0):
+                prediction = net(data).cpu()
+                prediction = prediction.detach().numpy()
+                if np.argmax(prediction) == np.argmax(y_test[i]):
+                    acc_num += 1
+                total_num += 1
+            print("Accuracy on Test-Set-2 : %.2f\n" % (acc_num / total_num))
 
     loss_show = False
     if loss_show:
