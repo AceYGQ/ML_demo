@@ -8,6 +8,7 @@ import os
 import torch
 
 import HeatMap
+import PCA
 import Net
 
 
@@ -23,12 +24,16 @@ if __name__ == "__main__":
     # HeatMap.heatmap_restore(dataset_path, origin_path, fname)
     # HeatMap.heatmap_restore(testset_path, origin_path, fname)
 
-    print("Check Device...")
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print(device)
+    # ML Part
+    PCA.PCA_CLF(dataset_path)
 
-    train = True
+    # NN Part
+    train = False
     if train:
+        print("Check Device...")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        print(device)
+
         x_train, y_train, x_test, y_test = HeatMap.get_label(dataset_path)
         x_train = torch.from_numpy(x_train).to(torch.float32)
         x_test = torch.from_numpy(x_test).to(torch.float32)

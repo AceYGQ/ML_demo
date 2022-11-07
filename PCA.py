@@ -1,39 +1,189 @@
-# 用python实现主成分分析（PCA）
 import numpy as np
-import matplotlib.pyplot as plt
-from numpy.linalg import eig
-from sklearn.datasets import load_iris
+# import pandas as pd
+import os
+import time
+import random
+# import matplotlib.pyplot as plt
+import scipy.stats as stats
+from sklearn import metrics
+from sklearn.preprocessing import scale
+from sklearn.decomposition import PCA
+from sklearn.model_selection import KFold
+from sklearn.model_selection import cross_validate
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn import svm
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+import HeatMap
 
 
-def pca(X, k):
-    X_decentralization = X - X.mean(axis=0)             # 向量X去中心化
-    X_cov = np.cov(X_decentralization.T, ddof=0)        # 计算向量X的协方差矩阵，自由度可以选择0或1
-    eigen_values, eigen_vectors = eig(X_cov)              # 计算协方差矩阵的特征值和特征向量
-    k_large_index = eigen_values.argsort()[-k:][::-1]    # 选取最大的K个特征值及其特征向量
-    k_eigenvectors = eigen_vectors[k_large_index]        # 用X与特征向量相乘
-    return np.dot(X_decentralization, k_eigenvectors.T)
+def PCA_CLF(path):
+    print("========== PCA ==========\n")
+    # read data & labels
+    data, labels = get_data(path)
+
+    # tmp = data[0, :].reshape((1, -1))
+    # corr_matrix = pd.DataFrame(tmp).corr(method='pearson')
+    # print(corr_matrix)
+
+    # data scaling
+    data = scale(data)
+
+    # Analysis Part
+    # PCA_analysis(data)
+
+    # rebuild model
+    newData = PCA(n_components=4).fit_transform(data)
+
+    # classifier
+    # clf_svm(newData, labels)
+    # clf_knn(newData, labels)
+    clf_rf(newData, labels)
 
 
-if __name__ == '__main__':
-    iris = load_iris()
-    data = iris.data
-    # num = 2
-    # data_pca = pca(data, num)
-    # print(data_pca)
+def get_data(path):
+    data = []
+    labels = []
+    imagePaths = sorted(list(HeatMap.list_images(path)))
+    random.seed(42)
+    random.shuffle(imagePaths)
 
-    # 计算协方差矩阵
-    data_cov = np.cov(data.T, ddof=0)
+    for imagePath in imagePaths:
+        image = np.fromfile(imagePath)
+        image = np.reshape(image, (-1, 1))
+        data.append(image)
 
-    # 计算协方差矩阵的特征值和特征向量
-    eigenvalues, eigenvectors = eig(data_cov)
+        label = int(imagePath.split(os.path.sep)[-2])
+        labels.append(label)
 
-    tot = sum(eigenvalues)
-    var_exp = [(i / tot) for i in sorted(eigenvalues, reverse=True)]
-    cum_var_exp = np.cumsum(var_exp)
+    data = np.array(data)
+    data = data.squeeze()
+    labels = np.array(labels)
 
-    plt.bar(range(1, 5), var_exp, alpha=0.5, align='center', label='individual var')
-    plt.step(range(1, 5), cum_var_exp, where='mid', label='cumulative var')
-    plt.ylabel('variance ration')
-    plt.xlabel('principal components')
-    plt.legend(loc='best')
-    plt.show()
+    return data, labels
+
+
+def PCA_analysis(data):
+    pcaModel = PCA(n_components=None)
+    pcaModel.fit(data)
+    print("Var :\n", pcaModel.explained_variance_)
+    print("Ratio :\n", pcaModel.explained_variance_ratio_)
+
+
+def clf_svm(data, labels):
+    print("***** classifier : SVM *****")
+    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
+
+    # clf = svm.SVC(kernel="linear")
+    # clf = svm.SVC(kernel="poly")
+    # clf = svm.SVC(kernel="sigmoid")
+    clf = svm.SVC(kernel="rbf")
+    start_time = time.time()
+    clf.fit(x_train, y_train)
+    train_time = time.time()
+
+    pre = clf.predict(x_test).reshape((-1, 1))
+    predict_time = time.time()
+
+    y_test = y_test.reshape((-1, 1))
+    result = np.concatenate((pre, y_test), axis=1)
+    # print("prediction :", result)
+    print("train time : %.4fs , predict time : %.4fs" % (train_time - start_time, predict_time - train_time))
+
+    # Pearson correlation coefficient & p
+    # R2 - coefficient of determination: the closer to 1,  the better the model is.
+    # RMSE - Root Mean Square Error
+    pearson_r = stats.pearsonr(y_test.squeeze(), pre.squeeze())
+    R2 = metrics.r2_score(y_test, pre)
+    RMSE = metrics.mean_squared_error(y_test, pre) ** 0.5
+    print('Pearson correlation coefficient is {0}, R2 is {1} and RMSE is {2}.'.format(pearson_r, R2, RMSE))
+
+    count = 0
+    for sample in result:
+        if sample[-2] != sample[-1]:
+            count += 1
+    print("mistake number : ", count)
+    print("mistake ratio : %.4f\n" % (count / result.shape[0]))
+
+
+def clf_knn(data, labels):
+    print("***** classifier : KNN *****")
+    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
+    clf = KNeighborsClassifier(n_neighbors=3)
+
+    start_time = time.time()
+    clf.fit(x_train, y_train)
+    train_time = time.time()
+    pre = clf.predict(x_test).reshape((-1, 1))
+    predict_time = time.time()
+
+    y_test = y_test.reshape((-1, 1))
+    result = np.concatenate((pre, y_test), axis=1)
+    # print("prediction :", result)
+    print("train time : %.4fs , predict time : %.4fs" % (train_time - start_time, predict_time - train_time))
+
+    # Pearson correlation coefficient & p
+    # R2 - coefficient of determination: the closer to 1,  the better the model is.
+    # RMSE - Root Mean Square Error
+    pearson_r = stats.pearsonr(y_test.squeeze(), pre.squeeze())
+    R2 = metrics.r2_score(y_test, pre)
+    RMSE = metrics.mean_squared_error(y_test, pre) ** 0.5
+    print('Pearson correlation coefficient is {0}, R2 is {1} and RMSE is {2}.'.format(pearson_r, R2, RMSE))
+
+    count = 0
+    for sample in result:
+        if sample[-2] != sample[-1]:
+            count += 1
+    print("mistake number : ", count)
+    print("mistake ratio : %.4f\n" % (count / result.shape[0]))
+
+
+def clf_rf(data, labels):
+    print("***** classifier : RF *****")
+
+    # pre-set parameters
+    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
+    clf = RandomForestClassifier(n_estimators=10, random_state=0, n_jobs=-1)
+
+    start_time = time.time()
+    clf.fit(x_train, y_train)
+    train_time = time.time()
+    pre = clf.predict(x_test).reshape((-1, 1))
+    predict_time = time.time()
+
+    y_test = y_test.reshape((-1, 1))
+    result = np.concatenate((pre, y_test), axis=1)
+    # print("prediction :", result)
+    print("train time : %.4fs , predict time : %.4fs" % (train_time - start_time, predict_time - train_time))
+
+    # Pearson correlation coefficient & p
+    # R2 - coefficient of determination: the closer to 1,  the better the model is.
+    # RMSE - Root Mean Square Error
+    pearson_r = stats.pearsonr(y_test.squeeze(), pre.squeeze())
+    R2 = metrics.r2_score(y_test, pre)
+    RMSE = metrics.mean_squared_error(y_test, pre) ** 0.5
+    print('Pearson correlation coefficient is {0}, R2 is {1} and RMSE is {2}.'.format(pearson_r, R2, RMSE))
+
+    count = 0
+    for sample in result:
+        if sample[-2] != sample[-1]:
+            count += 1
+    print("mistake number : ", count)
+    print("mistake ratio : %.4f\n" % (count / result.shape[0]))
+
+    # k-cross validate
+    # cv = cross_validate(clf, data, labels, cv=5, scoring='accuracy', return_estimator=True)
+    # scores = cross_val_score(clf, data, labels, cv=5, scoring='accuracy').mean()
+    # print(scores)
+
+    # grid search and k-cross validate
+    # param_grid = [
+    #     {'n_estimators': range(10, 1001, 10), 'max_features': ['auto', 'sqrt', 'log2']},
+    # ]
+    # clf = RandomForestClassifier()
+    # grid_search = GridSearchCV(clf, param_grid, cv=5, scoring='accuracy')
+    # grid_search.fit(data, labels)
+    # print(grid_search.best_params_)
