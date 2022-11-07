@@ -8,9 +8,9 @@ import scipy.stats as stats
 from sklearn import metrics
 from sklearn.preprocessing import scale
 from sklearn.decomposition import PCA
-from sklearn.model_selection import KFold
-from sklearn.model_selection import cross_validate
-from sklearn.model_selection import cross_val_score
+# from sklearn.model_selection import KFold
+# from sklearn.model_selection import cross_validate
+# from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn import svm
@@ -143,47 +143,49 @@ def clf_knn(data, labels):
 
 def clf_rf(data, labels):
     print("***** classifier : RF *****")
+    is_parameter_search = False
 
-    # pre-set parameters
-    (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
-    clf = RandomForestClassifier(n_estimators=10, random_state=0, n_jobs=-1)
+    if not is_parameter_search:
+        # pre-set parameters
+        (x_train, x_test, y_train, y_test) = train_test_split(data, labels, test_size=0.2, random_state=42)
+        clf = RandomForestClassifier(n_estimators=10, random_state=0, n_jobs=-1)
 
-    start_time = time.time()
-    clf.fit(x_train, y_train)
-    train_time = time.time()
-    pre = clf.predict(x_test).reshape((-1, 1))
-    predict_time = time.time()
+        start_time = time.time()
+        clf.fit(x_train, y_train)
+        train_time = time.time()
+        pre = clf.predict(x_test).reshape((-1, 1))
+        predict_time = time.time()
 
-    y_test = y_test.reshape((-1, 1))
-    result = np.concatenate((pre, y_test), axis=1)
-    # print("prediction :", result)
-    print("train time : %.4fs , predict time : %.4fs" % (train_time - start_time, predict_time - train_time))
+        y_test = y_test.reshape((-1, 1))
+        result = np.concatenate((pre, y_test), axis=1)
+        # print("prediction :", result)
+        print("train time : %.4fs , predict time : %.4fs" % (train_time - start_time, predict_time - train_time))
 
-    # Pearson correlation coefficient & p
-    # R2 - coefficient of determination: the closer to 1,  the better the model is.
-    # RMSE - Root Mean Square Error
-    pearson_r = stats.pearsonr(y_test.squeeze(), pre.squeeze())
-    R2 = metrics.r2_score(y_test, pre)
-    RMSE = metrics.mean_squared_error(y_test, pre) ** 0.5
-    print('Pearson correlation coefficient is {0}, R2 is {1} and RMSE is {2}.'.format(pearson_r, R2, RMSE))
+        # Pearson correlation coefficient & p
+        # R2 - coefficient of determination: the closer to 1,  the better the model is.
+        # RMSE - Root Mean Square Error
+        pearson_r = stats.pearsonr(y_test.squeeze(), pre.squeeze())
+        R2 = metrics.r2_score(y_test, pre)
+        RMSE = metrics.mean_squared_error(y_test, pre) ** 0.5
+        print('Pearson correlation coefficient is {0}, R2 is {1} and RMSE is {2}.'.format(pearson_r, R2, RMSE))
 
-    count = 0
-    for sample in result:
-        if sample[-2] != sample[-1]:
-            count += 1
-    print("mistake number : ", count)
-    print("mistake ratio : %.4f\n" % (count / result.shape[0]))
+        count = 0
+        for sample in result:
+            if sample[-2] != sample[-1]:
+                count += 1
+        print("mistake number : ", count)
+        print("mistake ratio : %.4f\n" % (count / result.shape[0]))
+    else:
+        # k-cross validate
+        # cv = cross_validate(clf, data, labels, cv=5, scoring='accuracy', return_estimator=True)
+        # scores = cross_val_score(clf, data, labels, cv=5, scoring='accuracy').mean()
+        # print(scores)
 
-    # k-cross validate
-    # cv = cross_validate(clf, data, labels, cv=5, scoring='accuracy', return_estimator=True)
-    # scores = cross_val_score(clf, data, labels, cv=5, scoring='accuracy').mean()
-    # print(scores)
-
-    # grid search and k-cross validate
-    # param_grid = [
-    #     {'n_estimators': range(10, 1001, 10), 'max_features': ['auto', 'sqrt', 'log2']},
-    # ]
-    # clf = RandomForestClassifier()
-    # grid_search = GridSearchCV(clf, param_grid, cv=5, scoring='accuracy')
-    # grid_search.fit(data, labels)
-    # print(grid_search.best_params_)
+        # grid search and k-cross validate
+        param_grid = [
+            {'n_estimators': range(10, 1001, 10), 'max_features': ['auto', 'sqrt', 'log2']},
+        ]
+        clf = RandomForestClassifier()
+        grid_search = GridSearchCV(clf, param_grid, cv=5, scoring='accuracy')
+        grid_search.fit(data, labels)
+        print(grid_search.best_params_)
