@@ -13,12 +13,12 @@ import Net
 
 
 if __name__ == "__main__":
-    print("Demo for Heat Map Processing...")
+    print("\nDemo for Heat Map Processing...")
 
     origin_path = r"E:\Python\Work\data\HeatMap"
     dataset_path = r"dataset"
     testset_path = r"test"
-    fname = "7-Localization_7_N_N_N_N_N_N_A-1"
+    fname = "11000"
 
     # HeatMap.heatmap_visualization(origin_path, fname)
     # HeatMap.heatmap_restore(dataset_path, origin_path, fname)
